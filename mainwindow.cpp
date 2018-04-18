@@ -372,12 +372,12 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
                  int scale = 1;
                  int delta = 0;
                  int ddepth = CV_16S;
-                 int sobelKernelSize = 3; //5;
+                 int sobelKernelSize = 5; //5;
                  int GaussianBlurKernelSize = 15;
 
                  /// Reduce the noise so we avoid false circle detection
-                 GaussianBlur( src_gray, src_gray, Size(GaussianBlurKernelSize, GaussianBlurKernelSize), 2, 2 );
-//                 medianBlur(src_gray, src_gray, 9);
+//                 GaussianBlur( src_gray, src_gray, Size(GaussianBlurKernelSize, GaussianBlurKernelSize), 2, 2 );
+                 medianBlur(src_gray, src_gray, 9);
 
                  /// Gradient Y
                  //Scharr( src_gray, grad_y, ddepth, 0, 1, scale, delta, BORDER_DEFAULT );
@@ -386,13 +386,27 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
 
                 imshow( "gradient", abs_grad_y );
 
+                Mat gradientMask = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+                threshold(abs_grad_y, gradientMask, gui->gradientThreshSlider->value(), 255, CV_THRESH_BINARY);
+
+                imshow( "gradientThresh", gradientMask );
+
+                // HOUGH transform
+
                  vector<Vec3f> circles;
 
 //                 CV_HOUGH_GRADIENT CV_HOUGH_MULTI_SCALE CV_HOUGH_PROBABILISTIC CV_HOUGH_STANDARD
 
+                 Mat src2, src_gray2;
+                 src2 = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+                 src_gray2 = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+                 maskedImage.copyTo(src2, gradientMask);
+                 /// Convert it to gray
+                 cvtColor( src2, src_gray2, CV_BGR2GRAY );
+
                  /// Apply the Hough Transform to find the circles
 //                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 0.5,  20, 70, 30, 0, 100 );
-                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 1,  50, 70, 30, 5, 100 );
+                 HoughCircles( src_gray2, circles, CV_HOUGH_GRADIENT, 1,  50, 70, 30, 5, 100 );
 //                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 200, 100, 0, 100 ); //Default
 
                  /// Draw the circles detected
@@ -401,12 +415,12 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
                      Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
                      int radius = cvRound(circles[i][2]);
                      // circle center
-                     circle( src, center, 3, Scalar(0,255,0), -1, 8, 0 );
+                     circle( src2, center, 3, Scalar(0,255,0), -1, 8, 0 );
                      // circle outline
-                     circle( src, center, radius, Scalar(0,0,255), 3, 8, 0 );
+                     circle( src2, center, radius, Scalar(0,0,255), 3, 8, 0 );
                   }
                  // Display the resulting frame
-                 imshow( "Balls", src );
+                 imshow( "Balls", src2 );
 
           }
 
