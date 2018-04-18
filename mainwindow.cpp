@@ -10,6 +10,8 @@ Vec3b redSample, blueSample, greenSample;
 Ui::MainWindow* gui;
 int clickNum = 0;
 
+Mat verticalGradientFilter;
+
 void onMouse( int event, int x, int y, int, void* )
 {
 
@@ -173,47 +175,56 @@ void MainWindow::on_maskedImageRadioButton_toggled(bool checked)
 void MainWindow::on_redASlider_sliderMoved(int position)
 {
         MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+        cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_redBSlider_sliderMoved(int position)
 {
         MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+        cout << "New position:  " << position << endl;
 }
 
 
 void MainWindow::on_greenASlider_sliderMoved(int position)
 {
         MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+        cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_greenBSlider_sliderMoved(int position)
 {
         MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+        cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_blueASlider_sliderMoved(int position)
 {
         MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+        cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_blueBSlider_sliderMoved(int position)
 {
         MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+        cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_redCSlider_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_greenCSlider_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_blueCSlider_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -224,31 +235,37 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::on_blueASlider_2_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_blueBSlider_2_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_blueCSlider_2_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_redASlider_2_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_redBSlider_2_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_redCSlider_2_sliderMoved(int position)
 {
     MainWindow::on_rgbThreshCheckBox_stateChanged(1);
+    cout << "New position:  " << position << endl;
 }
 
 void MainWindow::on_WebcamCheckBox_toggled(bool checked)
@@ -339,6 +356,57 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
 //                 currentMask = mask;
 
                  imshow( "FilteredFrame", maskedImage );
+
+
+
+                 Mat src_gray, src;
+                 src = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+                 maskedImage.copyTo(src);
+                 /// Convert it to gray
+                 cvtColor( src, src_gray, CV_BGR2GRAY );
+
+
+
+                 Mat grad_y;
+                 Mat abs_grad_y;
+                 int scale = 1;
+                 int delta = 0;
+                 int ddepth = CV_16S;
+                 int sobelKernelSize = 3; //5;
+                 int GaussianBlurKernelSize = 15;
+
+                 /// Reduce the noise so we avoid false circle detection
+                 GaussianBlur( src_gray, src_gray, Size(GaussianBlurKernelSize, GaussianBlurKernelSize), 2, 2 );
+//                 medianBlur(src_gray, src_gray, 9);
+
+                 /// Gradient Y
+                 //Scharr( src_gray, grad_y, ddepth, 0, 1, scale, delta, BORDER_DEFAULT );
+                 Sobel( src_gray, grad_y, ddepth, 0, 1, sobelKernelSize, scale, delta, BORDER_DEFAULT );
+                 convertScaleAbs( grad_y, abs_grad_y );
+
+                imshow( "gradient", abs_grad_y );
+
+                 vector<Vec3f> circles;
+
+//                 CV_HOUGH_GRADIENT CV_HOUGH_MULTI_SCALE CV_HOUGH_PROBABILISTIC CV_HOUGH_STANDARD
+
+                 /// Apply the Hough Transform to find the circles
+//                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 0.5,  20, 70, 30, 0, 100 );
+                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 1,  50, 70, 30, 5, 100 );
+//                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 200, 100, 0, 100 ); //Default
+
+                 /// Draw the circles detected
+                 for( size_t i = 0; i < circles.size(); i++ )
+                 {
+                     Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+                     int radius = cvRound(circles[i][2]);
+                     // circle center
+                     circle( src, center, 3, Scalar(0,255,0), -1, 8, 0 );
+                     // circle outline
+                     circle( src, center, radius, Scalar(0,0,255), 3, 8, 0 );
+                  }
+                 // Display the resulting frame
+                 imshow( "Balls", src );
 
           }
 
