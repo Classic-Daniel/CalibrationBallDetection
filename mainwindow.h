@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QtQuick>
 #include <opencv2/opencv.hpp>
+#include <opencv2/highgui.hpp>
 #include <QMainWindow>
 #include <QFileDialog>
 #include <QTreeWidgetItem>
@@ -65,6 +66,8 @@ private slots:
     void on_redBSlider_2_sliderMoved(int position);
 
     void on_redCSlider_2_sliderMoved(int position);
+
+    void on_WebcamCheckBox_toggled(bool checked);
 
 private:
     Ui::MainWindow *ui;

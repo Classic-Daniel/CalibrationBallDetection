@@ -37,5 +37,7 @@ FORMS += \
         mainwindow.ui
 
 INCLUDEPATH += /usr/include
-LIBS += -L/usr/lib -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc -lopencv_features2d
+#INCLUDEPATH += /usr/include/opencv2
+LIBS += -L/usr/lib -lopencv_core -lopencv_imgcodecs -lopencv_highgui -lopencv_imgproc -lopencv_features2d -lopencv_videoio
+#LIBS += -L/usr/local/lib
 QMAKE_CXXFLAGS += -D_GLIBCXX_USE_CXX11_ABI=0 #disable gcc functionality to make compilation possible
