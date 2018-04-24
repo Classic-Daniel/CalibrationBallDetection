@@ -12,6 +12,33 @@ int clickNum = 0;
 
 Mat verticalGradientFilter;
 
+//canny edge detection
+Mat src, src_gray;
+Mat edges, detected_edges;
+
+int edgeThresh = 1;
+int lowThreshold;
+int const max_lowThreshold = 100;
+//int ratio = 3;
+int kernel_size = 3;
+char* window_name = "Edge Map";
+
+
+void CannyThreshold(int, void*)
+{
+  /// Reduce noise with a kernel 3x3
+  blur( src_gray, detected_edges, Size(3,3) );
+
+  /// Canny detector
+  Canny( detected_edges, detected_edges, lowThreshold, lowThreshold * 3, kernel_size );
+
+  /// Using Canny's output as a mask, we display our result
+  edges = Scalar::all(0);
+
+  src.copyTo( edges, detected_edges);
+  imshow( window_name, edges );
+ }
+
 void onMouse( int event, int x, int y, int, void* )
 {
 
@@ -307,6 +334,8 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
               Mat diffMaskG = Mat::zeros(frame.size(), CV_8U);
               Mat diffMaskB = Mat::zeros(frame.size(), CV_8U);
 
+
+              //Lab color thresholding
                  for(int j=0; j<frame.rows; ++j)
                      for(int i=0; i<frame.cols; ++i)
                      {
@@ -334,96 +363,149 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
                          }
                      }
 
+                 //combining masks - mainly for display
                  Mat mask, maskedImage;
                  maskedImage = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
                  mask = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
-                 bitwise_or(diffMaskR, diffMaskG, mask);
-                 bitwise_or(mask, diffMaskB, mask);
-
-                 for(int i=0; i < gui->erosionSlider->value(); i++)
-                 {
-                     erode(mask, mask, Mat(), Point(-1, -1), 2, 1, 1);
-                 }
-                 for(int i=0; i < gui->dilationSlider->value(); i++)
-                 {
-                     dilate(mask, mask, Mat(), Point(-1, -1), 2, 1, 1);
-                 }
+                 diffMaskR.copyTo(mask);
 
                  frame.copyTo(maskedImage, mask);
+                 imshow( "FilteredFrame", maskedImage );
+
+                 src = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+                 src_gray = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+                 maskedImage.copyTo(src);
+                 /// Create a matrix of the same type and size as src (for edges)
+                 edges.create( src.size(), src.type() );
+
+                 /// Convert the image to grayscale
+                 cvtColor( src, src_gray, CV_BGR2GRAY );
+
+                 /// Create a window
+                 lowThreshold = gui->gradientThreshSlider->value();
+
+                 /// Show the image
+                 CannyThreshold(0, 0);
+
+                 //Remove edges
+                 Mat edgeMask, edgeGray;
+                 cvtColor( edges, edgeGray, CV_BGR2GRAY );
+                 threshold(edgeGray, edgeMask, gui->gradientThreshSlider->value(), 255, THRESH_BINARY);
+
+                 src.setTo(Scalar::all(0),edgeMask);
+                 imshow("Edges removed", src);
+
+//                 Mat edgesRemoved;
+//                 edgesRemoved = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+//                 maskedImage.copyTo(edgesRemoved);
+//                 for(int j=0; j<frame.rows; ++j)
+//                     for(int i=0; i<frame.cols; ++i)
+//                     {
+//                         if(edges.at<Vec3b>(j,i)[0] > 1 || edges.at<Vec3b>(j,i)[1] > 1 || edges.at<Vec3b>(j,i)[2] > 1)
+//                         {
+//                             edgesRemoved.at<Vec3b>(j,i)[0] = 0;
+//                             edgesRemoved.at<Vec3b>(j,i)[1] = 0;
+//                             edgesRemoved.at<Vec3b>(j,i)[2] = 0;
+//                         }
+//                     }
+//                 for(int i=0; i < gui->erosionSlider->value(); i++)
+//                 {
+//                     erode(mask, mask, Mat(), Point(-1, -1), 2, 1, 1);
+//                 }
+
+
+
+
+
+//                 bitwise_or(diffMaskR, diffMaskG, mask);
+//                 bitwise_or(mask, diffMaskB, mask);
+
+//                 for(int i=0; i < gui->erosionSlider->value(); i++)
+//                 {
+//                     erode(mask, mask, Mat(), Point(-1, -1), 2, 1, 1);
+//                 }
+//                 for(int i=0; i < gui->dilationSlider->value(); i++)
+//                 {
+//                     dilate(mask, mask, Mat(), Point(-1, -1), 2, 1, 1);
+//                 }
+
+//                 frame.copyTo(maskedImage, mask);
 //                 rgbImage.copyTo(maskedImageR, mask);
 //                 rgbImage.copyTo(maskedImageG, mask);
 //                 rgbImage.copyTo(maskedImageB, mask);
 //                 currentMask = mask;
 
-                 imshow( "FilteredFrame", maskedImage );
+//                 imshow( "FilteredFrame", maskedImage );
 
 
 
-                 Mat src_gray, src;
-                 src = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
-                 maskedImage.copyTo(src);
-                 /// Convert it to gray
-                 cvtColor( src, src_gray, CV_BGR2GRAY );
+//                 Mat src_gray, src;
+//                 src = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+//                 maskedImage.copyTo(src);
+//                 /// Convert it to gray
+//                 cvtColor( src, src_gray, CV_BGR2GRAY );
 
 
 
-                 Mat grad_y;
-                 Mat abs_grad_y;
-                 int scale = 1;
-                 int delta = 0;
-                 int ddepth = CV_16S;
-                 int sobelKernelSize = 5; //5;
-                 int GaussianBlurKernelSize = 15;
+//                 /// Generate grad_x and grad_y
+//                 Mat grad_x, grad_y;
+//                 Mat abs_grad_x, abs_grad_y;
+//                 grad_y = cv::Mat::zeros(frame.rows, frame.cols, CV_16U);
+//                 abs_grad_y = cv::Mat::zeros(frame.rows, frame.cols, CV_16U);
+//                 int scale = 1;
+//                 int delta = 0;
+//                 int ddepth = CV_16S;
+//                 int sobelKernelSize = 5; //5;
+//                 int GaussianBlurKernelSize = 5;
 
-                 /// Reduce the noise so we avoid false circle detection
+//                 /// Reduce the noise so we avoid false circle detection
 //                 GaussianBlur( src_gray, src_gray, Size(GaussianBlurKernelSize, GaussianBlurKernelSize), 2, 2 );
-                 medianBlur(src_gray, src_gray, 9);
+////                 medianBlur(src_gray, src_gray, 9);
 
-                 /// Gradient Y
-                 //Scharr( src_gray, grad_y, ddepth, 0, 1, scale, delta, BORDER_DEFAULT );
-                 Sobel( src_gray, grad_y, ddepth, 0, 1, sobelKernelSize, scale, delta, BORDER_DEFAULT );
-                 convertScaleAbs( grad_y, abs_grad_y );
+//                 /// Gradient Y
+//                 //Scharr( src_gray, grad_y, ddepth, 0, 1, scale, delta, BORDER_DEFAULT );
+//                 Sobel( src_gray, grad_y, ddepth, 0, 1, sobelKernelSize, scale, delta, BORDER_DEFAULT );
+//                 convertScaleAbs( grad_y, abs_grad_y );
 
-                imshow( "gradient", abs_grad_y );
+//                imshow( "gradient", abs_grad_y );
 
-                Mat gradientMask = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
-                threshold(abs_grad_y, gradientMask, gui->gradientThreshSlider->value(), 255, CV_THRESH_BINARY);
+//                Mat gradientMask = cv::Mat::zeros(frame.rows, frame.cols, CV_16U);
+//                threshold(abs_grad_y, gradientMask, gui->gradientThreshSlider->value(), 1000, CV_THRESH_BINARY);
 
-                imshow( "gradientThresh", gradientMask );
+//                imshow( "gradientThresh", gradientMask );
 
-                // HOUGH transform
+//                // HOUGH transform
 
-                 vector<Vec3f> circles;
+//                 vector<Vec3f> circles;
 
-//                 CV_HOUGH_GRADIENT CV_HOUGH_MULTI_SCALE CV_HOUGH_PROBABILISTIC CV_HOUGH_STANDARD
+////                 CV_HOUGH_GRADIENT CV_HOUGH_MULTI_SCALE CV_HOUGH_PROBABILISTIC CV_HOUGH_STANDARD
 
-                 Mat src2, src_gray2;
-                 src2 = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
-                 src_gray2 = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
-                 maskedImage.copyTo(src2, gradientMask);
-                 /// Convert it to gray
-                 cvtColor( src2, src_gray2, CV_BGR2GRAY );
+//                 Mat src2, src_gray2;
+//                 src2 = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+//                 src_gray2 = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+//                 maskedImage.copyTo(src2, gradientMask);
+//                 /// Convert it to gray
+//                 cvtColor( src2, src_gray2, CV_BGR2GRAY );
 
-                 /// Apply the Hough Transform to find the circles
-//                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 0.5,  20, 70, 30, 0, 100 );
-                 HoughCircles( src_gray2, circles, CV_HOUGH_GRADIENT, 1,  50, 70, 30, 5, 100 );
-//                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 200, 100, 0, 100 ); //Default
+//                 /// Apply the Hough Transform to find the circles
+////                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 0.5,  20, 70, 30, 0, 100 );
+//                 HoughCircles( src_gray2, circles, CV_HOUGH_GRADIENT, 1,  50, 70, 30, 5, 100 );
+////                 HoughCircles( src_gray, circles, CV_HOUGH_GRADIENT, 1, src_gray.rows/8, 200, 100, 0, 100 ); //Default
 
-                 /// Draw the circles detected
-                 for( size_t i = 0; i < circles.size(); i++ )
-                 {
-                     Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-                     int radius = cvRound(circles[i][2]);
-                     // circle center
-                     circle( src2, center, 3, Scalar(0,255,0), -1, 8, 0 );
-                     // circle outline
-                     circle( src2, center, radius, Scalar(0,0,255), 3, 8, 0 );
-                  }
-                 // Display the resulting frame
-                 imshow( "Balls", src2 );
+//                 /// Draw the circles detected
+//                 for( size_t i = 0; i < circles.size(); i++ )
+//                 {
+//                     Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+//                     int radius = cvRound(circles[i][2]);
+//                     // circle center
+//                     circle( src2, center, 3, Scalar(0,255,0), -1, 8, 0 );
+//                     // circle outline
+//                     circle( src2, center, radius, Scalar(0,0,255), 3, 8, 0 );
+//                  }
+//                 // Display the resulting frame
+//                 imshow( "Balls", src2 );
 
           }
-
 
           // Press  ESC on keyboard to exit
           char c=(char)waitKey(25);
