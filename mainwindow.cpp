@@ -372,6 +372,46 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
                  frame.copyTo(maskedImage, mask);
                  imshow( "FilteredFrame", maskedImage );
 
+
+//                 Mat src, src_gray;
+//                 src = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
+//                 maskedImage.copyTo(src);
+//                 Mat grad;
+//                 char* window_name = "Sobel Demo - Simple Edge Detector";
+//                 int scale = 1;
+//                 int delta = 0;
+//                 int ddepth = CV_16S;
+
+
+//                 GaussianBlur( src, src, Size(3,3), 0, 0, BORDER_DEFAULT );
+
+//                 /// Convert it to gray
+//                 cvtColor( src, src_gray, CV_BGR2GRAY );
+
+//                 /// Create window
+//                 namedWindow( window_name, CV_WINDOW_AUTOSIZE );
+
+//                 /// Generate grad_x and grad_y
+//                 Mat grad_x, grad_y;
+//                 Mat abs_grad_x, abs_grad_y;
+
+//                 /// Gradient X
+//                 //Scharr( src_gray, grad_x, ddepth, 1, 0, scale, delta, BORDER_DEFAULT );
+//                 Sobel( src_gray, grad_x, ddepth, 1, 0, 3, scale, delta, BORDER_DEFAULT );
+//                 convertScaleAbs( grad_x, abs_grad_x );
+
+//                 /// Gradient Y
+//                 //Scharr( src_gray, grad_y, ddepth, 0, 1, scale, delta, BORDER_DEFAULT );
+//                 Sobel( src_gray, grad_y, ddepth, 0, 1, 3, scale, delta, BORDER_DEFAULT );
+//                 convertScaleAbs( grad_y, abs_grad_y );
+
+//                 /// Total Gradient (approximate)
+//                 addWeighted( abs_grad_x, 0.5, abs_grad_y, 0.5, 0, grad );
+
+//                 imshow( window_name, grad );
+
+
+                 //Canny Edge removal
                  src = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
                  src_gray = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
                  maskedImage.copyTo(src);
@@ -392,29 +432,32 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
                  cvtColor( edges, edgeGray, CV_BGR2GRAY );
                  threshold(edgeGray, edgeMask, gui->gradientThreshSlider->value(), 255, THRESH_BINARY);
 
-                 src.setTo(Scalar::all(0),edgeMask);
-                 imshow("Edges removed", src);
+                 mask.setTo(Scalar::all(0),edgeMask);
 
-//                 Mat edgesRemoved;
-//                 edgesRemoved = cv::Mat::zeros(frame.rows, frame.cols, CV_8U);
-//                 maskedImage.copyTo(edgesRemoved);
-//                 for(int j=0; j<frame.rows; ++j)
-//                     for(int i=0; i<frame.cols; ++i)
-//                     {
-//                         if(edges.at<Vec3b>(j,i)[0] > 1 || edges.at<Vec3b>(j,i)[1] > 1 || edges.at<Vec3b>(j,i)[2] > 1)
-//                         {
-//                             edgesRemoved.at<Vec3b>(j,i)[0] = 0;
-//                             edgesRemoved.at<Vec3b>(j,i)[1] = 0;
-//                             edgesRemoved.at<Vec3b>(j,i)[2] = 0;
-//                         }
-//                     }
-//                 for(int i=0; i < gui->erosionSlider->value(); i++)
-//                 {
-//                     erode(mask, mask, Mat(), Point(-1, -1), 2, 1, 1);
-//                 }
+                 for(int i=0; i < gui->erosionSlider->value(); i++)
+                 {
+                     erode(mask, mask, Mat(), Point(-1, -1), 1, 1, 1);
+                 }
+
+                 imshow("Edges removed", mask);
+
+                 vector<vector<Point> > contours;
+                 vector<Vec4i> hierarchy;
+
+                 findContours(mask, contours, hierarchy,  CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 
+                 RNG rng(12345);
+                 Mat drawing = Mat::zeros( mask.size(), CV_8UC3 );
+                 for( int i = 0; i< contours.size(); i++ )
+                    {
+                      Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+                      drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
+                    }
 
+                 /// Show in a window
+                 namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
+                 imshow( "Contours", drawing );
 
 
 //                 bitwise_or(diffMaskR, diffMaskG, mask);
