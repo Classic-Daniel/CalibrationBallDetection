@@ -441,23 +441,23 @@ void MainWindow::on_WebcamCheckBox_toggled(bool checked)
 
                  imshow("Edges removed", mask);
 
-                 vector<vector<Point> > contours;
-                 vector<Vec4i> hierarchy;
+//                 vector<vector<Point> > contours;
+//                 vector<Vec4i> hierarchy;
 
-                 findContours(mask, contours, hierarchy,  CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
+//                 findContours(mask, contours, hierarchy,  CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE, Point(0, 0));
 
 
-                 RNG rng(12345);
-                 Mat drawing = Mat::zeros( mask.size(), CV_8UC3 );
-                 for( int i = 0; i< contours.size(); i++ )
-                    {
-                      Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-                      drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
-                    }
+//                 RNG rng(12345);
+//                 Mat drawing = Mat::zeros( mask.size(), CV_8UC3 );
+//                 for( int i = 0; i< contours.size(); i++ )
+//                    {
+//                      Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
+//                      drawContours( drawing, contours, i, color, 2, 8, hierarchy, 0, Point() );
+//                    }
 
-                 /// Show in a window
-                 namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
-                 imshow( "Contours", drawing );
+//                 /// Show in a window
+//                 namedWindow( "Contours", CV_WINDOW_AUTOSIZE );
+//                 imshow( "Contours", drawing );
 
 
 //                 bitwise_or(diffMaskR, diffMaskG, mask);
